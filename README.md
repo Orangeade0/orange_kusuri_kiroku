@@ -31,6 +31,11 @@
 
 データは端末内（Room / SQLite）にのみ保存し、外部には送信しません。
 
+## インストール
+
+[Releases](https://github.com/Orangeade0/orange_kusuri_kiroku/releases) から最新の APK をダウンロードして、
+Android 8.0 以上の端末にインストールします。
+
 ## ビルド
 
 Android Studio で開くか、Android SDK を用意して次を実行します。
@@ -47,6 +52,20 @@ APK は `app/build/outputs/apk/debug/app-debug.apk` に出力されます。
 
 テスト（ロジック・DB・通知・画面操作）を実行し、各画面の画像を
 `app/build/outputs/roborazzi/` に書き出します。
+
+リリース用の APK は、署名鍵の場所とパスワードをプロジェクト直下の `keystore.properties` に書いてから作ります
+（このファイルと鍵は Git に入れません）。
+
+```
+storeFile=鍵ファイルの場所
+storePassword=パスワード
+keyAlias=鍵のエイリアス
+keyPassword=パスワード
+```
+
+```bash
+./gradlew :app:assembleRelease
+```
 
 ## 構成
 
