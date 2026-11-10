@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">服药记录</string>
+    <string name="locale_tag">zh-CN</string>
+    <string name="date_pattern">M月d日 E</string>
+
+    <string name="tab_today">记录</string>
+    <string name="tab_history">日历</string>
+    <string name="tab_medications">药物</string>
+    <string name="tab_settings">设置</string>
+
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+    <string name="previous_day">前一天</string>
+    <string name="next_day">后一天</string>
+    <string name="back_to_today">回到今天</string>
+    <string name="progress_count">已服用 %1$d / %2$d 次</string>
+    <string name="progress_all_done">已全部服用</string>
+    <string name="mark_taken">已服药</string>
+    <string name="taken">已服用</string>
+    <string name="taken_at">%1$s 已记录</string>
+    <string name="not_taken">尚未服用</string>
+    <string name="undo_title">要撤销记录吗？</string>
+    <string name="undo_message">将撤销 %1$s（%2$s）的服药记录。</string>
+    <string name="undo_confirm">撤销</string>
+    <string name="cancel">取消</string>
+    <string name="ok">确定</string>
+    <string name="close">关闭</string>
+    <string name="empty_no_medications">尚未添加药物</string>
+    <string name="empty_no_medications_hint">添加要服用的药物和时间后，就可以在这里记录每天的服药情况。</string>
+    <string name="empty_no_doses">这一天没有服药安排</string>
+    <string name="add_medication">添加药物</string>
+
+    <string name="previous_month">上个月</string>
+    <string name="next_month">下个月</string>
+    <string name="month_title">%1$d年%2$d月</string>
+    <string name="month_rate">本月服药率 %1$d%%</string>
+    <string name="month_rate_detail">%1$d / %2$d 次</string>
+    <string name="month_no_data">本月没有记录</string>
+    <string name="legend_all">全部服用</string>
+    <string name="legend_partial">部分服用</string>
+    <string name="legend_none">未服用</string>
+    <string name="calendar_hint">点击日期可以查看或修改当天的记录。</string>
+    <string name="day_status_description">%1$d日 %2$d次中已服用%3$d次</string>
+
+    <string name="medications_title">药物</string>
+    <string name="add">添加</string>
+    <string name="reminder_on">已开启提醒</string>
+    <string name="notice_notifications_off">通知已关闭，无法收到提醒。</string>
+    <string name="notice_exact_alarm_off">未允许“闹钟和提醒”，通知可能会延迟几分钟。</string>
+    <string name="open_settings">打开设置</string>
+
+    <string name="edit_title_new">添加药物</string>
+    <string name="edit_title_edit">编辑药物</string>
+    <string name="back">返回</string>
+    <string name="save">保存</string>
+    <string name="field_name">药物名称</string>
+    <string name="field_dosage">每次用量（选填）</string>
+    <string name="field_dosage_placeholder">例：1片</string>
+    <string name="field_note">备注（选填）</string>
+    <string name="field_note_placeholder">例：降压药</string>
+    <string name="section_photo">照片</string>
+    <string name="take_photo">拍照</string>
+    <string name="choose_photo">选择照片</string>
+    <string name="remove_photo">删除照片</string>
+    <string name="photo_description">%1$s 的照片</string>
+    <string name="photo_enlarge">放大 %1$s 的照片</string>
+    <string name="photo_failed">无法读取照片</string>
+    <string name="no_camera">未找到相机应用</string>
+    <string name="section_timing">服药时机</string>
+    <string name="timing_none">指定时间</string>
+    <string name="timing_before">饭前</string>
+    <string name="timing_with">饭中</string>
+    <string name="timing_after">饭后</string>
+    <string name="meal_breakfast">早餐</string>
+    <string name="meal_lunch">午餐</string>
+    <string name="meal_dinner">晚餐</string>
+    <string name="meal_help_before">时间为用餐前%1$d分钟。用餐时间和分钟数可在“设置”中修改。</string>
+    <string name="meal_help_with">时间与用餐时间相同。用餐时间可在“设置”中修改。</string>
+    <string name="meal_help_after">时间为用餐后%1$d分钟。用餐时间和分钟数可在“设置”中修改。</string>
+    <string name="section_times">服药时间</string>
+    <string name="section_extra_times">其他时间（选填）</string>
+    <string name="times_empty">请至少选择一个服药时间</string>
+    <string name="add_time">添加时间</string>
+    <string name="remove_time">删除 %1$s</string>
+    <string name="preset_morning">早上</string>
+    <string name="preset_noon">中午</string>
+    <string name="preset_evening">晚上</string>
+    <string name="preset_bedtime">睡前</string>
+    <string name="reminder_switch">到时间时发送通知</string>
+    <string name="delete">删除</string>
+    <string name="delete_title">要删除这个药物吗？</string>
+    <string name="delete_message">将从今天起不再安排服用。以往的记录仍会保留在日历中。</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_language">语言（言語）</string>
+    <string name="language_system">跟随系统设置</string>
+    <string name="settings_meal_times">用餐时间</string>
+    <string name="settings_offsets">饭前、饭后的时间</string>
+    <string name="offset_before_value">用餐前%1$d分钟</string>
+    <string name="offset_after_value">用餐后%1$d分钟</string>
+    <string name="settings_meal_hint">修改后，设为饭前、饭中、饭后的药物时间将从今天起改变。</string>
+    <string name="minutes_value">%1$d分钟</string>
+
+    <string name="channel_name">服药提醒</string>
+    <string name="channel_description">提醒您按时服药</string>
+    <string name="notification_title">该服药了（%1$s）</string>
+    <string name="notification_action_taken">已服药</string>
+    <string name="notification_separator">、</string>
+    <string name="notification_item_with_timing">%1$s（%2$s）</string>
+</resources>

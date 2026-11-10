@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">おくすり記録</string>
+    <string name="locale_tag">ja</string>
+    <string name="date_pattern">M月d日(E)</string>
+
+    <string name="tab_today">きろく</string>
+    <string name="tab_history">カレンダー</string>
+    <string name="tab_medications">お薬</string>
+    <string name="tab_settings">設定</string>
+
+    <string name="today">今日</string>
+    <string name="yesterday">昨日</string>
+    <string name="previous_day">前の日</string>
+    <string name="next_day">次の日</string>
+    <string name="back_to_today">今日に戻る</string>
+    <string name="progress_count">%1$d / %2$d 回 服用済み</string>
+    <string name="progress_all_done">すべて飲みました</string>
+    <string name="mark_taken">飲んだ</string>
+    <string name="taken">服用済み</string>
+    <string name="taken_at">%1$s に記録</string>
+    <string name="not_taken">まだ飲んでいません</string>
+    <string name="undo_title">記録を取り消しますか？</string>
+    <string name="undo_message">%1$s（%2$s）の「飲んだ」記録を取り消します。</string>
+    <string name="undo_confirm">取り消す</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+    <string name="close">閉じる</string>
+    <string name="empty_no_medications">お薬がまだ登録されていません</string>
+    <string name="empty_no_medications_hint">飲むお薬と時間を登録すると、ここで毎日の記録をつけられます。</string>
+    <string name="empty_no_doses">この日の予定はありません</string>
+    <string name="add_medication">お薬を登録する</string>
+
+    <string name="previous_month">前の月</string>
+    <string name="next_month">次の月</string>
+    <string name="month_title">%1$d年%2$d月</string>
+    <string name="month_rate">この月の服用率 %1$d%%</string>
+    <string name="month_rate_detail">%1$d / %2$d 回</string>
+    <string name="month_no_data">この月の記録はありません</string>
+    <string name="legend_all">すべて服用</string>
+    <string name="legend_partial">一部服用</string>
+    <string name="legend_none">未服用</string>
+    <string name="calendar_hint">日付をタップすると、その日の記録を確認・修正できます。</string>
+    <string name="day_status_description">%1$d日 %2$d回中%3$d回服用</string>
+
+    <string name="medications_title">お薬</string>
+    <string name="add">追加</string>
+    <string name="reminder_on">通知あり</string>
+    <string name="notice_notifications_off">通知がオフになっているため、お知らせが届きません。</string>
+    <string name="notice_exact_alarm_off">「アラームとリマインダー」が許可されていないため、通知が数分遅れることがあります。</string>
+    <string name="open_settings">設定を開く</string>
+
+    <string name="edit_title_new">お薬を登録</string>
+    <string name="edit_title_edit">お薬を編集</string>
+    <string name="back">戻る</string>
+    <string name="save">保存</string>
+    <string name="field_name">お薬の名前</string>
+    <string name="field_dosage">1回の量（任意）</string>
+    <string name="field_dosage_placeholder">例: 1錠</string>
+    <string name="field_note">メモ（任意）</string>
+    <string name="field_note_placeholder">例: 血圧のお薬</string>
+    <string name="section_photo">写真</string>
+    <string name="take_photo">写真を撮る</string>
+    <string name="choose_photo">写真を選ぶ</string>
+    <string name="remove_photo">写真を削除</string>
+    <string name="photo_description">%1$s の写真</string>
+    <string name="photo_enlarge">%1$s の写真を拡大</string>
+    <string name="photo_failed">写真を読み込めませんでした</string>
+    <string name="no_camera">カメラアプリが見つかりません</string>
+    <string name="section_timing">飲むタイミング</string>
+    <string name="timing_none">時間指定</string>
+    <string name="timing_before">食前</string>
+    <string name="timing_with">食中</string>
+    <string name="timing_after">食後</string>
+    <string name="meal_breakfast">朝食</string>
+    <string name="meal_lunch">昼食</string>
+    <string name="meal_dinner">夕食</string>
+    <string name="meal_help_before">食事の%1$d分前の時間になります。食事の時間と分数は「設定」で変更できます。</string>
+    <string name="meal_help_with">食事と同じ時間になります。食事の時間は「設定」で変更できます。</string>
+    <string name="meal_help_after">食事の%1$d分後の時間になります。食事の時間と分数は「設定」で変更できます。</string>
+    <string name="section_times">飲む時間</string>
+    <string name="section_extra_times">そのほかの時間（任意）</string>
+    <string name="times_empty">飲む時間を1つ以上選んでください</string>
+    <string name="add_time">時間を追加</string>
+    <string name="remove_time">%1$s を削除</string>
+    <string name="preset_morning">朝</string>
+    <string name="preset_noon">昼</string>
+    <string name="preset_evening">夜</string>
+    <string name="preset_bedtime">寝る前</string>
+    <string name="reminder_switch">時間になったら通知する</string>
+    <string name="delete">削除</string>
+    <string name="delete_title">このお薬を削除しますか？</string>
+    <string name="delete_message">今日以降の予定から外れます。これまでの記録はカレンダーに残ります。</string>
+
+    <string name="settings_title">設定</string>
+    <string name="settings_language">言語（语言）</string>
+    <string name="language_system">端末の設定に合わせる</string>
+    <string name="settings_meal_times">食事の時間</string>
+    <string name="settings_offsets">食前・食後のタイミング</string>
+    <string name="offset_before_value">食事の%1$d分前</string>
+    <string name="offset_after_value">食事の%1$d分後</string>
+    <string name="settings_meal_hint">変更すると、食前・食中・食後に設定したお薬の時間が今日から変わります。</string>
+    <string name="minutes_value">%1$d分</string>
+
+    <string name="channel_name">服用リマインダー</string>
+    <string name="channel_description">お薬を飲む時間をお知らせします</string>
+    <string name="notification_title">お薬の時間です（%1$s）</string>
+    <string name="notification_action_taken">飲んだ</string>
+    <string name="notification_separator">、</string>
+    <string name="notification_item_with_timing">%1$s（%2$s）</string>
+</resources>
