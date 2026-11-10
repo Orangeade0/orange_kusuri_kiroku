@@ -14,11 +14,13 @@
 
 ## できること
 
-- **お薬の登録** — 名前、1回の量、写真、飲むタイミング、メモ
+- **お薬の登録** — 名前、1回の量、写真、飲むタイミング、服用期間、メモ
   - **写真** — カメラで撮るか、端末の写真から選んで添付。きろく画面でタップすると拡大表示
   - **飲むタイミング** — 時間指定（朝・昼・夜・寝る前、または任意の時刻）か、食前・食中・食後。
     食前・食中・食後は朝食・昼食・夕食から選び、食事の時間から自動で時刻を決める
     （初期値: 食前は食事の30分前、食後は食事の60分後）
+  - **服用期間** — 開始日と終了日を選択（「7日間」「14日間」「30日間」からも指定可能）。
+    終了日を過ぎると、きろくと通知に出なくなる。開始日は先の日付にも、さかのぼった日付にもできる
 - **きろく** — その日に飲むお薬が時間順に並び、「飲んだ」を押すと記録した時刻つきで保存。
   記録済みをタップすると確認のうえ取り消し。過去の日にさかのぼって確認・修正も可能
 - **カレンダー** — 日ごとの「飲んだ回数/予定回数」と、月の服用率を表示
@@ -83,6 +85,7 @@ The interface is available in Japanese and Simplified Chinese.
 - Register medications with a name, dose, photo, schedule and note
 - Schedule by clock time, or before / with / after breakfast, lunch and dinner
   (defaults: 30 minutes before a meal, 60 minutes after; meal times and offsets are adjustable)
+- Optional start and end dates for a course of medication
 - Mark each dose as taken, review past days on a calendar, and see the monthly adherence rate
 - Reminder notifications with a "taken" action
 - All data stays on the device; nothing is sent anywhere
@@ -97,6 +100,7 @@ This app is a record-keeping aid, not medical advice. Licensed under the [Apache
 - 添加药物：名称、每次用量、照片、服药时间、备注
 - 可以指定具体时间，也可以设为早餐、午餐、晚餐的饭前、饭中、饭后
   （默认：饭前为用餐前30分钟，饭后为用餐后60分钟；用餐时间和分钟数可以修改）
+- 可以设定服药期间（开始日期和结束日期）
 - 记录每次服药，在日历中查看以往的记录和每月服药率
 - 到时间时发送通知，可以直接在通知中记录
 - 所有数据只保存在手机中，不会发送到任何地方

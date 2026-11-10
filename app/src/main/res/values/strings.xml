@@ -81,6 +81,16 @@
     <string name="meal_help_before">食事の%1$d分前の時間になります。食事の時間と分数は「設定」で変更できます。</string>
     <string name="meal_help_with">食事と同じ時間になります。食事の時間は「設定」で変更できます。</string>
     <string name="meal_help_after">食事の%1$d分後の時間になります。食事の時間と分数は「設定」で変更できます。</string>
+    <string name="section_period">服用期間</string>
+    <string name="period_start">開始日</string>
+    <string name="period_end">終了日</string>
+    <string name="period_no_end">指定なし</string>
+    <string name="period_days">%1$d日間</string>
+    <string name="period_range">%1$s 〜 %2$s</string>
+    <string name="period_from">%1$s から</string>
+    <string name="period_ended">終了</string>
+    <string name="period_not_started">開始前</string>
+    <string name="period_hint">終了日を過ぎると、きろくと通知に出なくなります。これまでの記録は残ります。</string>
     <string name="section_times">飲む時間</string>
     <string name="section_extra_times">そのほかの時間（任意）</string>
     <string name="times_empty">飲む時間を1つ以上選んでください</string>

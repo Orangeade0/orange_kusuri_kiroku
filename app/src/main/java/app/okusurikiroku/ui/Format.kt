@@ -34,3 +34,17 @@ fun formatDay(epochDay: Long): String {
     val formatter = remember(pattern, locale) { DateTimeFormatter.ofPattern(pattern, locale) }
     return LocalDate.ofEpochDay(epochDay).format(formatter)
 }
+
+private val fullDateFormatter = DateTimeFormatter.ofPattern("yyyy年M月d日", Locale.ROOT)
+private val shortDateFormatter = DateTimeFormatter.ofPattern("M/d", Locale.ROOT)
+private val shortDateWithYearFormatter = DateTimeFormatter.ofPattern("yyyy/M/d", Locale.ROOT)
+
+/** "2026年11月10日"。日本語・中国語で同じ表記。 */
+fun formatFullDate(epochDay: Long): String = LocalDate.ofEpochDay(epochDay).format(fullDateFormatter)
+
+/** "11/10"。[today] と年が違うときだけ "2027/1/5" のように年をつける。 */
+fun formatShortDate(epochDay: Long, today: Long): String {
+    val date = LocalDate.ofEpochDay(epochDay)
+    val sameYear = date.year == LocalDate.ofEpochDay(today).year
+    return date.format(if (sameYear) shortDateFormatter else shortDateWithYearFormatter)
+}

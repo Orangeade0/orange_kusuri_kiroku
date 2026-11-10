@@ -6,6 +6,8 @@ import android.app.Application
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -144,6 +146,35 @@ class AppFlowTest {
         compose.onNodeWithText("きろく").performClick()
         waitForText("7:45")
         waitForText("19:45")
+    }
+
+    @Test
+    fun registerMedicationForSevenDays() {
+        val repository = (app as OkusuriApp).repository
+        val today = LocalDate.now().toEpochDay()
+
+        waitForText("お薬を登録する")
+        compose.onNodeWithText("お薬を登録する").performClick()
+        compose.onNodeWithText("お薬の名前").performTextInput("抗生物質")
+        compose.onNodeWithText("朝 8:00").performClick()
+        compose.onNodeWithText("7日間").performScrollTo().performClick()
+
+        // 終了日を日付で選び直すダイアログも開ける
+        compose.onNodeWithText("終了日").performClick()
+        compose.waitForIdle()
+        captureScreenRoboImage("build/outputs/roborazzi/date_picker.png")
+        compose.onNodeWithText("キャンセル").performClick()
+
+        compose.onNodeWithText("保存").performClick()
+        waitForText("0 / 1 回 服用済み")
+        val saved = runBlocking { repository.getMedications() }.single()
+        assertEquals(today, saved.periodStart)
+        assertEquals(today + 6, saved.periodEnd)
+
+        // お薬タブに期間が表示される
+        compose.onNodeWithText("お薬").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTextCompat("抗生物質").isNotEmpty() }
+        assertTrue(compose.onAllNodes(hasText(" 〜 ", substring = true)).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test

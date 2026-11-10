@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.LocalDateTime
+import java.util.Locale
 
 class ScheduleTest {
     private val day = 20_000L
@@ -35,6 +36,43 @@ class ScheduleTest {
         assertEquals(1, entriesForDay(day, listOf(med), emptyList()).size)
         assertEquals(1, entriesForDay(day + 1, listOf(med), emptyList()).size)
         assertEquals(0, entriesForDay(day + 2, listOf(med), emptyList()).size)
+    }
+
+    @Test
+    fun medicationIsScheduledOnlyWithinItsPeriod() {
+        val course = Medication(
+            id = 1, name = "A", times = listOf(480), periodStart = day + 1, periodEnd = day + 3, startDay = day - 10,
+        )
+        assertEquals(
+            listOf(0, 1, 1, 1, 0),
+            (day..day + 4).map { entriesForDay(it, listOf(course), emptyList()).size },
+        )
+        // 終了日なし・開始日なし
+        assertEquals(1, entriesForDay(day + 100, listOf(course.copy(periodEnd = null)), emptyList()).size)
+        assertEquals(1, entriesForDay(day, listOf(course.copy(periodStart = null)), emptyList()).size)
+    }
+
+    @Test
+    fun nextReminderSkipsDaysOutsideThePeriod() {
+        val now = LocalDateTime.of(2026, 11, 10, 7, 0)
+        val today = now.toLocalDate().toEpochDay()
+        val med = Medication(id = 1, name = "A", times = listOf(480), startDay = today - 10)
+        // 昨日で終了
+        assertNull(nextReminder(now, listOf(med.copy(periodEnd = today - 1))))
+        // 今日が最終日: 今日の分は鳴り、明日の分は鳴らない
+        assertEquals(LocalDateTime.of(2026, 11, 10, 8, 0), nextReminder(now, listOf(med.copy(periodEnd = today))))
+        assertNull(nextReminder(now.withHour(9), listOf(med.copy(periodEnd = today))))
+        // 明日から開始
+        assertEquals(LocalDateTime.of(2026, 11, 11, 8, 0), nextReminder(now, listOf(med.copy(periodStart = today + 1))))
+    }
+
+    @Test
+    fun unsupportedDeviceLanguagesFallBackToJapanese() {
+        assertNull(AppLocale.fallbackFor(Locale.JAPAN))
+        assertNull(AppLocale.fallbackFor(Locale.SIMPLIFIED_CHINESE))
+        assertEquals("zh-CN", AppLocale.fallbackFor(Locale.TRADITIONAL_CHINESE))
+        assertEquals("zh-CN", AppLocale.fallbackFor(Locale.forLanguageTag("zh-Hant-HK")))
+        assertEquals("ja", AppLocale.fallbackFor(Locale.US))
     }
 
     @Test

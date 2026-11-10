@@ -81,6 +81,16 @@
     <string name="meal_help_before">时间为用餐前%1$d分钟。用餐时间和分钟数可在“设置”中修改。</string>
     <string name="meal_help_with">时间与用餐时间相同。用餐时间可在“设置”中修改。</string>
     <string name="meal_help_after">时间为用餐后%1$d分钟。用餐时间和分钟数可在“设置”中修改。</string>
+    <string name="section_period">服药期间</string>
+    <string name="period_start">开始日期</string>
+    <string name="period_end">结束日期</string>
+    <string name="period_no_end">不设定</string>
+    <string name="period_days">%1$d天</string>
+    <string name="period_range">%1$s ～ %2$s</string>
+    <string name="period_from">从 %1$s 开始</string>
+    <string name="period_ended">已结束</string>
+    <string name="period_not_started">未开始</string>
+    <string name="period_hint">超过结束日期后，将不再出现在记录和通知中。以往的记录仍会保留。</string>
     <string name="section_times">服药时间</string>
     <string name="section_extra_times">其他时间（选填）</string>
     <string name="times_empty">请至少选择一个服药时间</string>

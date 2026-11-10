@@ -52,6 +52,9 @@ class MigrationTest {
             assertEquals(MealTiming.NONE, medication.mealTiming)
             assertEquals(emptyList<Int>(), medication.meals)
             assertNull(medication.imagePath)
+            assertNull(medication.periodStart)
+            assertNull(medication.periodEnd)
+            assertEquals(100L, medication.startDay)
             assertEquals(123456L, db.dao().getLogs(200).single().takenAt)
         } finally {
             db.close()

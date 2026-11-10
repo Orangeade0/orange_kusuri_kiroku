@@ -97,7 +97,7 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
     val activity = LocalActivity.current
     val activeMedications = allMedications?.filter { !it.isArchived }
 
-    val hasReminders = activeMedications?.any { it.reminderEnabled } == true
+    val hasReminders = activeMedications?.any { it.reminderEnabled && (it.periodEnd ?: Long.MAX_VALUE) >= today } == true
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
         notice = reminderNotice(context)
@@ -127,6 +127,7 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
             if (editing == NEW_MEDICATION || medication != null) {
                 MedicationEditScreen(
                     initial = medication,
+                    today = today,
                     mealSettings = mealSettings,
                     onSave = { saved ->
                         viewModel.save(saved)
@@ -173,6 +174,7 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
 
                     Tab.MEDICATIONS -> MedicationListScreen(
                         medications = activeMedications,
+                        today = today,
                         notice = notice.takeIf { hasReminders },
                         onAdd = { editingId = NEW_MEDICATION },
                         onEdit = { editingId = it.id },

@@ -65,16 +65,20 @@ class MedRepository(private val db: AppDatabase) {
         val normalized = medication.copy(meals = meals, manualTimes = manualTimes, times = times)
         val old = if (medication.id == 0L) null else dao.getMedication(medication.id)
         return when {
-            old == null -> dao.insert(normalized.copy(id = 0, startDay = today, archivedDay = null))
+            // 開始日に過去の日を選んだら、その日までさかのぼって予定に入れる（あとから記録をつけられる）
+            old == null -> {
+                val startDay = minOf(today, medication.periodStart ?: today)
+                dao.insert(normalized.copy(id = 0, startDay = startDay, archivedDay = null))
+            }
 
             old.times == times -> {
-                dao.update(normalized.copy(startDay = old.startDay, archivedDay = old.archivedDay))
+                dao.update(normalized.copy(startDay = startDayForUpdate(old, normalized), archivedDay = old.archivedDay))
                 old.id
             }
 
             // 今日登録したばかりなら、守るべき過去の記録はない
             old.startDay >= today -> {
-                dao.update(normalized.copy(startDay = old.startDay, archivedDay = old.archivedDay))
+                dao.update(normalized.copy(startDay = startDayForUpdate(old, normalized), archivedDay = old.archivedDay))
                 carryOverTodayLogs(old, old.id, today, times, mealTimeRemap(old, oldSettings, normalized, settings))
                 old.id
             }
@@ -86,6 +90,16 @@ class MedRepository(private val db: AppDatabase) {
                 newId
             }
         }
+    }
+
+    /**
+     * 開始日を登録日より前に変えたときは、その日までさかのぼる。
+     * ただし時間変更で切り替わった行は、前の行の期間と重なってしまうので動かさない。
+     */
+    private suspend fun startDayForUpdate(old: Medication, updated: Medication): Long {
+        val periodStart = updated.periodStart ?: return old.startDay
+        if (periodStart >= old.startDay) return old.startDay
+        return if (dao.countArchivedOn(old.startDay, old.id) == 0) periodStart else old.startDay
     }
 
     /**

@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -185,4 +189,34 @@ fun TimePickerDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
+
+/** 日付を1日選ぶ。[minDay] を渡すと、それより前の日は選べない。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DayPickerDialog(initialDay: Long, minDay: Long?, onConfirm: (Long) -> Unit, onDismiss: () -> Unit) {
+    val selectable = remember(minDay) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                minDay == null || utcTimeMillis >= minDay * MILLIS_PER_DAY
+        }
+    }
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = initialDay * MILLIS_PER_DAY,
+        selectableDates = selectable,
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                enabled = state.selectedDateMillis != null,
+                onClick = { state.selectedDateMillis?.let { onConfirm(Math.floorDiv(it, MILLIS_PER_DAY)) } },
+            ) { Text(stringResource(R.string.ok)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    ) {
+        DatePicker(state = state)
+    }
 }

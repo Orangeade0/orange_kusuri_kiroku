@@ -50,6 +50,8 @@ class ScreenshotTest {
             manualTimes = listOf(1320),
             times = listOf(480, 1200, 1320),
             imagePath = "sample.jpg",
+            periodStart = LocalDate.of(2026, 11, 10).toEpochDay(),
+            periodEnd = LocalDate.of(2026, 11, 23).toEpochDay(),
             startDay = 0,
         ),
         Medication(id = 3, name = "整腸剤", dosage = "1包", times = listOf(480, 720, 1140), reminderEnabled = false, startDay = 0),
@@ -127,23 +129,47 @@ class ScreenshotTest {
     @Test
     fun medicationList() = capture("medication_list") {
         MainTabs(Tab.MEDICATIONS, {}) {
-            MedicationListScreen(medications, ReminderNotice.EXACT_ALARM_OFF, {}, {}, {})
+            MedicationListScreen(
+                medications + listOf(
+                    Medication(
+                        id = 4,
+                        name = "抗生物質",
+                        dosage = "1錠",
+                        times = listOf(480, 1200),
+                        periodStart = today - 9,
+                        periodEnd = today - 3,
+                        startDay = 0,
+                    ),
+                    Medication(
+                        id = 5,
+                        name = "花粉症の薬",
+                        times = listOf(480),
+                        periodStart = today + 5,
+                        startDay = 0,
+                    ),
+                ),
+                today,
+                ReminderNotice.EXACT_ALARM_OFF,
+                {},
+                {},
+                {},
+            )
         }
     }
 
     @Test
     fun medicationEdit() = capture("medication_edit") {
-        MedicationEditScreen(medications[1], MealSettings(), {}, {}, {})
+        MedicationEditScreen(medications[1], today, MealSettings(), {}, {}, {})
     }
 
     @Test
     fun medicationEditByClock() = capture("medication_edit_clock") {
-        MedicationEditScreen(medications[2].copy(manualTimes = listOf(480, 630, 1140)), MealSettings(), {}, {}, {})
+        MedicationEditScreen(medications[2].copy(manualTimes = listOf(480, 630, 1140)), today, MealSettings(), {}, {}, {})
     }
 
     @Test
     fun medicationNew() = capture("medication_new") {
-        MedicationEditScreen(null, MealSettings(), {}, {}, {})
+        MedicationEditScreen(null, today, MealSettings(), {}, {}, {})
     }
 
     @Test
@@ -168,7 +194,7 @@ class ScreenshotTest {
     @Test
     @Config(qualifiers = "zh-rCN-w411dp-h891dp-420dpi")
     fun medicationEditChinese() = capture("zh_medication_edit") {
-        MedicationEditScreen(medications[1], MealSettings(), {}, {}, {})
+        MedicationEditScreen(medications[1], today, MealSettings(), {}, {}, {})
     }
 
     @Test

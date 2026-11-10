@@ -79,6 +79,55 @@ class RepositoryTest {
     }
 
     @Test
+    fun pastStartDateBackdatesTheSchedule() = runBlocking {
+        repository.save(
+            Medication(name = "A", manualTimes = listOf(480), periodStart = today - 3, periodEnd = today + 3, startDay = 0),
+            today,
+        )
+        assertEquals(DaySummary(0, 0), summary(today - 4))
+        assertEquals(DaySummary(1, 0), summary(today - 3)) // さかのぼって記録をつけられる
+        assertEquals(DaySummary(1, 0), summary(today + 3))
+        assertEquals(DaySummary(0, 0), summary(today + 4))
+    }
+
+    @Test
+    fun futureStartDateKeepsTodayEmpty() = runBlocking {
+        repository.save(Medication(name = "A", manualTimes = listOf(480), periodStart = today + 2, startDay = 0), today)
+        assertEquals(DaySummary(0, 0), summary(today))
+        assertEquals(DaySummary(0, 0), summary(today + 1))
+        assertEquals(DaySummary(1, 0), summary(today + 2))
+    }
+
+    @Test
+    fun settingAnEndDateLaterKeepsRecordsAndStopsTheSchedule() = runBlocking {
+        val id = repository.save(Medication(name = "A", manualTimes = listOf(480), startDay = 0), today - 5)
+        repository.setTaken(id, today - 1, 480, taken = true)
+        val saved = repository.getMedications().single()
+        assertEquals(id, repository.save(saved.copy(periodStart = today - 5, periodEnd = today), today))
+
+        assertEquals(DaySummary(1, 1), summary(today - 1))
+        assertEquals(DaySummary(1, 0), summary(today)) // 終了日当日までは予定に入る
+        assertEquals(DaySummary(0, 0), summary(today + 1))
+    }
+
+    @Test
+    fun movingStartEarlierOnEditBackdatesUnlessTheRowReplacedAnOlderOne() = runBlocking {
+        // そのまま使い続けているお薬: 開始日を前にずらせる
+        repository.save(Medication(name = "A", manualTimes = listOf(480), startDay = 0), today - 2)
+        repository.save(repository.getMedications().single().copy(periodStart = today - 6), today)
+        assertEquals(DaySummary(1, 0), summary(today - 6))
+
+        // 時間を変えて切り替わったお薬: 前の予定と重ならないよう、切り替えた日より前には伸ばさない
+        repository.delete(repository.getMedications().single().id, today)
+        repository.save(Medication(name = "B", manualTimes = listOf(600), startDay = 0), today - 4)
+        repository.save(repository.getMedications().single { it.name == "B" }.copy(manualTimes = listOf(700)), today - 2)
+        val current = repository.getMedications().single { it.name == "B" && !it.isArchived }
+        repository.save(current.copy(periodStart = today - 4), today)
+        val entries = entriesForDay(today - 3, repository.getMedications(), repository.logs(today - 3, today - 3).first())
+        assertEquals(listOf(600), entries.filter { it.medication.name == "B" }.map { it.minuteOfDay })
+    }
+
+    @Test
     fun deletingKeepsHistoryButRemovesFromToday() = runBlocking {
         val id = repository.save(Medication(name = "A", manualTimes = listOf(480), startDay = 0), today - 5)
         repository.setTaken(id, today - 1, 480, taken = true)

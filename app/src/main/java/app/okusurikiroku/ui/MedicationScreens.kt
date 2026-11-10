@@ -19,6 +19,7 @@ import app.okusurikiroku.data.MealSettings
 import app.okusurikiroku.data.MealTiming
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
@@ -89,6 +90,7 @@ import app.okusurikiroku.data.Medication
 @Composable
 fun MedicationListScreen(
     medications: List<Medication>?,
+    today: Long,
     notice: ReminderNotice?,
     onAdd: () -> Unit,
     onEdit: (Medication) -> Unit,
@@ -141,7 +143,7 @@ fun MedicationListScreen(
                     item(key = "notice") { NoticeCard(notice, onOpenSettings, Modifier.animateItem()) }
                 }
                 items(medications, key = { it.id }) { medication ->
-                    MedicationCard(medication, onClick = { onEdit(medication) }, modifier = Modifier.animateItem())
+                    MedicationCard(medication, today, onClick = { onEdit(medication) }, modifier = Modifier.animateItem())
                 }
             }
         }
@@ -177,7 +179,7 @@ private fun NoticeCard(notice: ReminderNotice, onOpenSettings: (ReminderNotice) 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MedicationCard(medication: Medication, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun MedicationCard(medication: Medication, today: Long, onClick: () -> Unit, modifier: Modifier = Modifier) {
     AppCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             MedicationAvatar(medication, size = 56.dp)
@@ -192,6 +194,7 @@ private fun MedicationCard(medication: Medication, onClick: () -> Unit, modifier
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                PeriodLine(medication, today)
                 Spacer(Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -225,6 +228,42 @@ private fun MedicationCard(medication: Medication, onClick: () -> Unit, modifier
     }
 }
 
+/** 服用期間の表示。終了日がある・まだ始まっていない・すでに終わった、のどれかのときだけ出す。 */
+@Composable
+private fun PeriodLine(medication: Medication, today: Long) {
+    val start = medication.periodStart
+    val end = medication.periodEnd
+    val notStarted = start != null && start > today
+    val ended = end != null && end < today
+    if (end == null && !notStarted) return
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+        if (notStarted || ended) {
+            Surface(
+                color = if (ended) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = if (ended) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onTertiaryContainer,
+                shape = RoundedCornerShape(50),
+            ) {
+                Text(
+                    stringResource(if (ended) R.string.period_ended else R.string.period_not_started),
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
+        val from = formatShortDate(start ?: medication.startDay, today)
+        Text(
+            if (end != null) {
+                stringResource(R.string.period_range, from, formatShortDate(end, today))
+            } else {
+                stringResource(R.string.period_from, from)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 private val PRESETS = listOf(
     R.string.preset_morning to 8 * 60,
     R.string.preset_noon to 12 * 60,
@@ -237,6 +276,7 @@ private val PRESETS = listOf(
 @Composable
 fun MedicationEditScreen(
     initial: Medication?,
+    today: Long,
     mealSettings: MealSettings,
     onSave: (Medication) -> Unit,
     onDelete: () -> Unit,
@@ -259,6 +299,9 @@ fun MedicationEditScreen(
         mutableStateOf<List<Int>>(ArrayList(initial?.manualTimes.orEmpty().takeIf { initialTiming != MealTiming.NONE }.orEmpty()))
     }
     var reminderEnabled by rememberSaveable { mutableStateOf(initial?.reminderEnabled ?: true) }
+    // 服用期間。開始日を指定していないお薬は、登録した日を開始日として見せる
+    var periodStart by rememberSaveable { mutableStateOf(initial?.periodStart ?: initial?.startDay ?: today) }
+    var periodEnd by rememberSaveable { mutableStateOf(initial?.periodEnd) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -306,6 +349,8 @@ fun MedicationEditScreen(
                                     reminderEnabled = reminderEnabled,
                                     note = note.trim(),
                                     imagePath = imagePath,
+                                    periodStart = periodStart,
+                                    periodEnd = periodEnd,
                                     startDay = initial?.startDay ?: 0,
                                     archivedDay = initial?.archivedDay,
                                 ),
@@ -445,6 +490,19 @@ fun MedicationEditScreen(
             }
 
             AppCard(Modifier.fillMaxWidth()) {
+                PeriodSection(
+                    start = periodStart,
+                    end = periodEnd,
+                    onStartChange = { newStart ->
+                        // 終了日が開始日より前にならないよう、開始日と同じ長さだけずらす
+                        periodEnd = periodEnd?.let { it + (newStart - periodStart) }
+                        periodStart = newStart
+                    },
+                    onEndChange = { periodEnd = it },
+                )
+            }
+
+            AppCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -503,6 +561,93 @@ fun MedicationEditScreen(
                 TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
+    }
+}
+
+private val PERIOD_PRESET_DAYS = listOf(7, 14, 30)
+
+/** 服用期間（開始日と終了日）。終了日は日付で選ぶほか、「7日間」などの長さでも決められる。 */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PeriodSection(start: Long, end: Long?, onStartChange: (Long) -> Unit, onEndChange: (Long?) -> Unit) {
+    // 0: 閉じている、1: 開始日を選択中、2: 終了日を選択中
+    var picking by rememberSaveable { mutableStateOf(0) }
+    Column(Modifier.padding(16.dp)) {
+        SectionLabel(stringResource(R.string.section_period))
+        Spacer(Modifier.height(4.dp))
+        PeriodRow(stringResource(R.string.period_start), formatFullDate(start), onClick = { picking = 1 })
+        PeriodRow(
+            stringResource(R.string.period_end),
+            end?.let { formatFullDate(it) } ?: stringResource(R.string.period_no_end),
+            onClick = { picking = 2 },
+        )
+        Spacer(Modifier.height(4.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = end == null,
+                onClick = { onEndChange(null) },
+                label = { Text(stringResource(R.string.period_no_end)) },
+            )
+            for (days in PERIOD_PRESET_DAYS) {
+                FilterChip(
+                    selected = end == start + days - 1,
+                    onClick = { onEndChange(start + days - 1) },
+                    label = { Text(stringResource(R.string.period_days, days)) },
+                )
+            }
+        }
+        Text(
+            stringResource(R.string.period_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    when (picking) {
+        1 -> DayPickerDialog(
+            initialDay = start,
+            minDay = null,
+            onConfirm = {
+                onStartChange(it)
+                picking = 0
+            },
+            onDismiss = { picking = 0 },
+        )
+
+        2 -> DayPickerDialog(
+            initialDay = end ?: start,
+            minDay = start,
+            onConfirm = {
+                onEndChange(it)
+                picking = 0
+            },
+            onDismiss = { picking = 0 },
+        )
+    }
+}
+
+@Composable
+private fun PeriodRow(label: String, value: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(vertical = 10.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            shape = RoundedCornerShape(50),
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            )
+        }
     }
 }
 

@@ -35,6 +35,10 @@ interface MedDao {
     @Query("DELETE FROM medications WHERE id = :id")
     suspend fun deleteMedication(id: Long)
 
+    /** [day] に終了した、ほかの行の数。時間変更で切り替わった「前の行」があるかの判定に使う。 */
+    @Query("SELECT COUNT(*) FROM medications WHERE archivedDay = :day AND id != :id")
+    suspend fun countArchivedOn(day: Long, id: Long): Int
+
     @Query("SELECT * FROM intake_logs WHERE day BETWEEN :fromDay AND :toDay")
     fun observeLogs(fromDay: Long, toDay: Long): Flow<List<IntakeLog>>
 
@@ -72,7 +76,15 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [Medication::class, IntakeLog::class], version = 2)
+/** v3: 服用期間（periodStart / periodEnd）を追加。 */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE medications ADD COLUMN periodStart INTEGER")
+        db.execSQL("ALTER TABLE medications ADD COLUMN periodEnd INTEGER")
+    }
+}
+
+@Database(entities = [Medication::class, IntakeLog::class], version = 3)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dao(): MedDao
@@ -80,7 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "okusuri.db")
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }
