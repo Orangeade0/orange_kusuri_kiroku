@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,14 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,51 +66,70 @@ fun SettingsScreen(
     var editing by rememberSaveable { mutableStateOf(NOTHING) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.settings_title)) }) },
+        contentWindowInsets = WindowInsets.statusBars,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            )
+        },
     ) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
         ) {
             SectionTitle(stringResource(R.string.settings_language))
-            Column(Modifier.selectableGroup()) {
-                LanguageRow(stringResource(R.string.language_system), language == null) { onLanguageChange(null) }
-                for ((tag, name) in LANGUAGES) {
-                    LanguageRow(name, language == tag) { onLanguageChange(tag) }
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .padding(vertical = 6.dp),
+                ) {
+                    LanguageRow(stringResource(R.string.language_system), language == null) { onLanguageChange(null) }
+                    for ((tag, name) in LANGUAGES) {
+                        LanguageRow(name, language == tag) { onLanguageChange(tag) }
+                    }
                 }
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
             SectionTitle(stringResource(R.string.settings_meal_times))
-            for (meal in MealSettings.MEALS) {
-                ValueRow(
-                    label = stringResource(MEAL_LABELS[meal]),
-                    value = formatMinutes(mealSettings.mealTimes[meal]),
-                    onClick = { editing = meal },
-                )
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(vertical = 6.dp)) {
+                    for (meal in MealSettings.MEALS) {
+                        ValueRow(
+                            label = stringResource(MEAL_LABELS[meal]),
+                            value = formatMinutes(mealSettings.mealTimes[meal]),
+                            onClick = { editing = meal },
+                        )
+                    }
+                }
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
             SectionTitle(stringResource(R.string.settings_offsets))
-            ValueRow(
-                label = stringResource(R.string.timing_before),
-                value = stringResource(R.string.offset_before_value, mealSettings.beforeMinutes),
-                onClick = { editing = EDIT_BEFORE },
-            )
-            ValueRow(
-                label = stringResource(R.string.timing_after),
-                value = stringResource(R.string.offset_after_value, mealSettings.afterMinutes),
-                onClick = { editing = EDIT_AFTER },
-            )
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(vertical = 6.dp)) {
+                    ValueRow(
+                        label = stringResource(R.string.timing_before),
+                        value = stringResource(R.string.offset_before_value, mealSettings.beforeMinutes),
+                        onClick = { editing = EDIT_BEFORE },
+                    )
+                    ValueRow(
+                        label = stringResource(R.string.timing_after),
+                        value = stringResource(R.string.offset_after_value, mealSettings.afterMinutes),
+                        onClick = { editing = EDIT_AFTER },
+                    )
+                }
+            }
             Text(
                 stringResource(R.string.settings_meal_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp + LocalBottomBarInset.current))
         }
     }
 
@@ -150,7 +174,7 @@ private fun SectionTitle(text: String) {
         text,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 18.dp, bottom = 8.dp),
     )
 }
 
@@ -179,7 +203,17 @@ private fun ValueRow(label: String, value: String, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.primary)
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            shape = RoundedCornerShape(50),
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            )
+        }
     }
 }
 

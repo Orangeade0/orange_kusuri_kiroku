@@ -18,6 +18,13 @@ import app.okusurikiroku.OkusuriApp
 import app.okusurikiroku.data.MealSettings
 import app.okusurikiroku.data.MealTiming
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Button
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -25,6 +32,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -85,12 +94,24 @@ fun MedicationListScreen(
     onEdit: (Medication) -> Unit,
     onOpenSettings: (ReminderNotice) -> Unit,
 ) {
+    val bottomInset = LocalBottomBarInset.current
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.medications_title)) }) },
+        contentWindowInsets = WindowInsets.statusBars,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(stringResource(R.string.medications_title), style = MaterialTheme.typography.headlineMedium)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+            )
+        },
         floatingActionButton = {
             if (!medications.isNullOrEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = onAdd,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.padding(bottom = bottomInset + 12.dp),
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                     text = { Text(stringResource(R.string.add)) },
                 )
@@ -110,17 +131,17 @@ fun MedicationListScreen(
             }
 
             else -> LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp + bottomInset),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
             ) {
                 if (notice != null) {
-                    item(key = "notice") { NoticeCard(notice, onOpenSettings) }
+                    item(key = "notice") { NoticeCard(notice, onOpenSettings, Modifier.animateItem()) }
                 }
                 items(medications, key = { it.id }) { medication ->
-                    MedicationCard(medication, onClick = { onEdit(medication) })
+                    MedicationCard(medication, onClick = { onEdit(medication) }, modifier = Modifier.animateItem())
                 }
             }
         }
@@ -128,13 +149,14 @@ fun MedicationListScreen(
 }
 
 @Composable
-private fun NoticeCard(notice: ReminderNotice, onOpenSettings: (ReminderNotice) -> Unit) {
+private fun NoticeCard(notice: ReminderNotice, onOpenSettings: (ReminderNotice) -> Unit, modifier: Modifier = Modifier) {
     Card(
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
         ),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
             Text(
@@ -153,24 +175,13 @@ private fun NoticeCard(notice: ReminderNotice, onOpenSettings: (ReminderNotice) 
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MedicationCard(medication: Medication, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+private fun MedicationCard(medication: Medication, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AppCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            medication.imagePath?.let { image ->
-                MedicationImage(
-                    fileName = image,
-                    contentDescription = stringResource(R.string.photo_description, medication.name),
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                )
-                Spacer(Modifier.width(12.dp))
-            }
+            MedicationAvatar(medication, size = 56.dp)
+            Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(medication.name, style = MaterialTheme.typography.titleMedium)
                 val detail = medicationDetail(medication, showTiming = true)
@@ -181,20 +192,33 @@ private fun MedicationCard(medication: Medication, onClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    medication.times.joinToString("  ") { formatMinutes(it) },
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Spacer(Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    for (minute in medication.times) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Text(
+                                formatMinutes(minute),
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                }
             }
             if (medication.reminderEnabled) {
                 Spacer(Modifier.width(12.dp))
                 Icon(
                     Icons.Filled.Notifications,
                     contentDescription = stringResource(R.string.reminder_on),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -265,8 +289,10 @@ fun MedicationEditScreen(
                             Icon(Icons.Filled.Delete, stringResource(R.string.delete))
                         }
                     }
-                    TextButton(
+                    Button(
                         enabled = canSave,
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(end = 12.dp),
                         onClick = {
                             onSave(
                                 Medication(
@@ -291,7 +317,7 @@ fun MedicationEditScreen(
         },
     ) { padding ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -299,136 +325,153 @@ fun MedicationEditScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.field_name)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = dosage,
-                onValueChange = { dosage = it },
-                label = { Text(stringResource(R.string.field_dosage)) },
-                placeholder = { Text(stringResource(R.string.field_dosage_placeholder)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            PhotoSection(name = name, imagePath = imagePath, onChange = { imagePath = it })
-
-            Column {
-                Text(stringResource(R.string.section_timing), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    MealTiming.entries.forEachIndexed { index, timing ->
-                        SegmentedButton(
-                            selected = mealTiming == timing,
-                            onClick = { mealTiming = timing },
-                            shape = SegmentedButtonDefaults.itemShape(index, MealTiming.entries.size),
-                            icon = {},
-                        ) { Text(mealTimingLabel(timing), maxLines = 1) }
-                    }
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text(stringResource(R.string.field_name)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = dosage,
+                        onValueChange = { dosage = it },
+                        label = { Text(stringResource(R.string.field_dosage)) },
+                        placeholder = { Text(stringResource(R.string.field_dosage_placeholder)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
+            }
 
-                if (byMeal) {
+            AppCard(Modifier.fillMaxWidth()) {
+                Box(Modifier.padding(16.dp)) {
+                    PhotoSection(name = name, imagePath = imagePath, onChange = { imagePath = it })
+                }
+            }
+
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    SectionLabel(stringResource(R.string.section_timing))
                     Spacer(Modifier.height(8.dp))
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        MealTiming.entries.forEachIndexed { index, timing ->
+                            SegmentedButton(
+                                selected = mealTiming == timing,
+                                onClick = { mealTiming = timing },
+                                shape = SegmentedButtonDefaults.itemShape(index, MealTiming.entries.size),
+                                icon = {},
+                            ) { Text(mealTimingLabel(timing), maxLines = 1) }
+                        }
+                    }
+
+                    if (byMeal) {
+                        Spacer(Modifier.height(8.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (meal in MealSettings.MEALS) {
+                                FilterChip(
+                                    selected = meal in meals,
+                                    onClick = {
+                                        meals = ArrayList(if (meal in meals) meals - meal else (meals + meal).sorted())
+                                    },
+                                    label = {
+                                        val time = formatMinutes(mealSettings.doseTime(mealTiming, meal))
+                                        Text("${stringResource(MEAL_LABELS[meal])} $time")
+                                    },
+                                )
+                            }
+                        }
+                        Text(
+                            when (mealTiming) {
+                                MealTiming.BEFORE -> stringResource(R.string.meal_help_before, mealSettings.beforeMinutes)
+                                MealTiming.AFTER -> stringResource(R.string.meal_help_after, mealSettings.afterMinutes)
+                                else -> stringResource(R.string.meal_help_with)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        stringResource(if (byMeal) R.string.section_extra_times else R.string.section_times),
+                        style = if (byMeal) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    // 食事に合わせるときは、朝・昼・夜の代わりに食事を選ぶので「寝る前」だけ出す
+                    val presets = if (byMeal) PRESETS.takeLast(1) else PRESETS
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for (meal in MealSettings.MEALS) {
+                        for ((labelRes, minute) in presets) {
                             FilterChip(
-                                selected = meal in meals,
-                                onClick = {
-                                    meals = ArrayList(if (meal in meals) meals - meal else (meals + meal).sorted())
-                                },
-                                label = {
-                                    val time = formatMinutes(mealSettings.doseTime(mealTiming, meal))
-                                    Text("${stringResource(MEAL_LABELS[meal])} $time")
+                                selected = minute in manualTimes,
+                                onClick = { toggleManualTime(minute) },
+                                label = { Text("${stringResource(labelRes)} ${formatMinutes(minute)}") },
+                            )
+                        }
+                        for (minute in manualTimes.filter { time -> presets.none { it.second == time } }) {
+                            val label = formatMinutes(minute)
+                            InputChip(
+                                selected = true,
+                                onClick = { toggleManualTime(minute) },
+                                label = { Text(label) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = stringResource(R.string.remove_time, label),
+                                        modifier = Modifier.size(InputChipDefaults.IconSize),
+                                    )
                                 },
                             )
                         }
-                    }
-                    Text(
-                        when (mealTiming) {
-                            MealTiming.BEFORE -> stringResource(R.string.meal_help_before, mealSettings.beforeMinutes)
-                            MealTiming.AFTER -> stringResource(R.string.meal_help_after, mealSettings.afterMinutes)
-                            else -> stringResource(R.string.meal_help_with)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(if (byMeal) R.string.section_extra_times else R.string.section_times),
-                    style = if (byMeal) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(4.dp))
-                // 食事に合わせるときは、朝・昼・夜の代わりに食事を選ぶので「寝る前」だけ出す
-                val presets = if (byMeal) PRESETS.takeLast(1) else PRESETS
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for ((labelRes, minute) in presets) {
-                        FilterChip(
-                            selected = minute in manualTimes,
-                            onClick = { toggleManualTime(minute) },
-                            label = { Text("${stringResource(labelRes)} ${formatMinutes(minute)}") },
+                        AssistChip(
+                            onClick = { showTimePicker = true },
+                            label = { Text(stringResource(R.string.add_time)) },
+                            leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp)) },
                         )
                     }
-                    for (minute in manualTimes.filter { time -> presets.none { it.second == time } }) {
-                        val label = formatMinutes(minute)
-                        InputChip(
-                            selected = true,
-                            onClick = { toggleManualTime(minute) },
-                            label = { Text(label) },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Filled.Close,
-                                    contentDescription = stringResource(R.string.remove_time, label),
-                                    modifier = Modifier.size(InputChipDefaults.IconSize),
-                                )
-                            },
+                    if (effectiveTimes.isEmpty()) {
+                        Text(
+                            stringResource(R.string.times_empty),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    AssistChip(
-                        onClick = { showTimePicker = true },
-                        label = { Text(stringResource(R.string.add_time)) },
-                        leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null, Modifier.size(18.dp)) },
-                    )
-                }
-                if (effectiveTimes.isEmpty()) {
-                    Text(
-                        stringResource(R.string.times_empty),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(value = reminderEnabled, role = Role.Switch, onValueChange = { reminderEnabled = it })
-                    .padding(vertical = 8.dp),
-            ) {
-                Text(
-                    stringResource(R.string.reminder_switch),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                Switch(checked = reminderEnabled, onCheckedChange = null)
-            }
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(value = reminderEnabled, role = Role.Switch, onValueChange = { reminderEnabled = it })
+                            .padding(vertical = 8.dp),
+                    ) {
+                        Text(
+                            stringResource(R.string.reminder_switch),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Switch(checked = reminderEnabled, onCheckedChange = null)
+                    }
 
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text(stringResource(R.string.field_note)) },
-                placeholder = { Text(stringResource(R.string.field_note_placeholder)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text(stringResource(R.string.field_note)) },
+                        placeholder = { Text(stringResource(R.string.field_note_placeholder)) },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -493,7 +536,7 @@ private fun PhotoSection(name: String, imagePath: String?, onChange: (String?) -
     }
 
     Column {
-        Text(stringResource(R.string.section_photo), style = MaterialTheme.typography.titleMedium)
+        SectionLabel(stringResource(R.string.section_photo))
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (imagePath != null) {
@@ -502,10 +545,25 @@ private fun PhotoSection(name: String, imagePath: String?, onChange: (String?) -
                     contentDescription = stringResource(R.string.photo_description, name),
                     modifier = Modifier
                         .size(96.dp)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .clip(MaterialTheme.shapes.medium),
                 )
-                Spacer(Modifier.width(12.dp))
+            } else {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_notification),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
             }
+            Spacer(Modifier.width(14.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     val uri = images.newCameraTarget().second

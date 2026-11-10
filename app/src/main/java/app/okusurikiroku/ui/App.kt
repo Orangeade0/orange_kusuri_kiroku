@@ -11,8 +11,34 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -23,7 +49,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,104 +107,173 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
         notice = reminderNotice(context)
     }
 
-    val editing = editingId
-    if (editing != null) {
-        BackHandler { editingId = null }
-        val medication = allMedications?.find { it.id == editing }
-        // プロセス再生成の直後など、編集対象の読み込みが終わるまでは何も出さない
-        if (editing == NEW_MEDICATION || medication != null) {
-            MedicationEditScreen(
-                initial = medication,
-                mealSettings = mealSettings,
-                onSave = { saved ->
-                    viewModel.save(saved)
-                    if (saved.reminderEnabled && needsNotificationPermission(context)) {
-                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    editingId = null
-                },
-                onDelete = {
-                    viewModel.delete(editing)
-                    editingId = null
-                },
-                onBack = { editingId = null },
-            )
-        } else if (allMedications != null) {
-            editingId = null
-        }
-        return
-    }
+    // 一覧と編集画面を、横にすべらせながら入れ替える
+    AnimatedContent(
+        targetState = editingId,
+        contentKey = { it != null },
+        transitionSpec = {
+            if (targetState != null) {
+                (slideInHorizontally(tween(280)) { it / 5 } + fadeIn(tween(220))) togetherWith fadeOut(tween(140))
+            } else {
+                fadeIn(tween(220)) togetherWith (slideOutHorizontally(tween(240)) { it / 5 } + fadeOut(tween(160)))
+            }
+        },
+        label = "screen",
+    ) { editing ->
+        if (editing != null) {
+            BackHandler { editingId = null }
+            val medication = allMedications?.find { it.id == editing }
+            // プロセス再生成の直後など、編集対象の読み込みが終わるまでは何も出さない
+            if (editing == NEW_MEDICATION || medication != null) {
+                MedicationEditScreen(
+                    initial = medication,
+                    mealSettings = mealSettings,
+                    onSave = { saved ->
+                        viewModel.save(saved)
+                        if (saved.reminderEnabled && needsNotificationPermission(context)) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        editingId = null
+                    },
+                    onDelete = {
+                        viewModel.delete(editing)
+                        editingId = null
+                    },
+                    onBack = { editingId = null },
+                )
+            } else {
+                // 編集対象が見つからない（削除済みなど）なら一覧に戻る
+                val loaded = allMedications != null
+                LaunchedEffect(loaded) { if (loaded) editingId = null }
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+            }
+        } else {
+            MainTabs(tab = tab, onTabChange = { tab = it }) { shown ->
+                when (shown) {
+                    Tab.TODAY -> TodayScreen(
+                        day = selectedDay,
+                        today = today,
+                        entries = dayEntries,
+                        hasMedications = activeMedications?.isNotEmpty() == true,
+                        onDayChange = viewModel::selectDay,
+                        onSetTaken = viewModel::setTaken,
+                        onAddMedication = { editingId = NEW_MEDICATION },
+                    )
 
-    MainTabs(tab = tab, onTabChange = { tab = it }) {
-        when (tab) {
-            Tab.TODAY -> TodayScreen(
-                day = selectedDay,
-                today = today,
-                entries = dayEntries,
-                hasMedications = activeMedications?.isNotEmpty() == true,
-                onDayChange = viewModel::selectDay,
-                onSetTaken = viewModel::setTaken,
-                onAddMedication = { editingId = NEW_MEDICATION },
-            )
+                    Tab.HISTORY -> HistoryScreen(
+                        month = month,
+                        today = today,
+                        summaries = monthSummaries,
+                        onMonthChange = viewModel::selectMonth,
+                        onDayClick = { day ->
+                            viewModel.selectDay(day)
+                            tab = Tab.TODAY
+                        },
+                    )
 
-            Tab.HISTORY -> HistoryScreen(
-                month = month,
-                today = today,
-                summaries = monthSummaries,
-                onMonthChange = viewModel::selectMonth,
-                onDayClick = { day ->
-                    viewModel.selectDay(day)
-                    tab = Tab.TODAY
-                },
-            )
+                    Tab.MEDICATIONS -> MedicationListScreen(
+                        medications = activeMedications,
+                        notice = notice.takeIf { hasReminders },
+                        onAdd = { editingId = NEW_MEDICATION },
+                        onEdit = { editingId = it.id },
+                        onOpenSettings = { openReminderSettings(context, it) },
+                    )
 
-            Tab.MEDICATIONS -> MedicationListScreen(
-                medications = activeMedications,
-                notice = notice.takeIf { hasReminders },
-                onAdd = { editingId = NEW_MEDICATION },
-                onEdit = { editingId = it.id },
-                onOpenSettings = { openReminderSettings(context, it) },
-            )
-
-            Tab.SETTINGS -> SettingsScreen(
-                language = language,
-                mealSettings = mealSettings,
-                onLanguageChange = { tag ->
-                    if (tag != language) {
-                        viewModel.setLanguage(tag)
-                        // 画面を作り直して、選んだ言語の文言に切り替える
-                        activity?.recreate()
-                    }
-                },
-                onMealSettingsChange = viewModel::setMealSettings,
-            )
+                    Tab.SETTINGS -> SettingsScreen(
+                        language = language,
+                        mealSettings = mealSettings,
+                        onLanguageChange = { tag ->
+                            if (tag != language) {
+                                viewModel.setLanguage(tag)
+                                // 画面を作り直して、選んだ言語の文言に切り替える
+                                activity?.recreate()
+                            }
+                        },
+                        onMealSettingsChange = viewModel::setMealSettings,
+                    )
+                }
+            }
         }
     }
 }
 
+/** 下部のナビゲーションが覆う高さ。スクロールする画面は、この分だけ下に余白を足す。 */
+val LocalBottomBarInset = compositionLocalOf { 0.dp }
+
+/**
+ * 下部に浮かぶナビゲーションと、タブごとの画面。タブを替えると、ふわりと入れ替わる。
+ * 画面はナビゲーションの下までスクロールでき、下端は背景色に溶けるように消える。
+ */
 @Composable
-fun MainTabs(tab: Tab, onTabChange: (Tab) -> Unit, content: @Composable () -> Unit) {
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                for (item in Tab.entries) {
-                    NavigationBarItem(
-                        selected = item == tab,
-                        onClick = { onTabChange(item) },
-                        icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(stringResource(item.labelRes)) },
-                    )
-                }
+fun MainTabs(tab: Tab, onTabChange: (Tab) -> Unit, content: @Composable (Tab) -> Unit) {
+    val brand = LocalBrand.current
+    val density = LocalDensity.current
+    val background = MaterialTheme.colorScheme.background
+    var barInset by remember { mutableStateOf(0.dp) }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(background),
+    ) {
+        CompositionLocalProvider(LocalBottomBarInset provides barInset) {
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = {
+                    (fadeIn(tween(220, delayMillis = 60)) + scaleIn(tween(220, delayMillis = 60), initialScale = 0.97f)) togetherWith
+                        fadeOut(tween(90))
+                },
+                label = "tab",
+                modifier = Modifier.fillMaxSize(),
+            ) { shown ->
+                content(shown)
             }
-        },
-    ) { padding ->
+        }
+
         Box(
             Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .consumeWindowInsets(padding),
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(barInset + 28.dp)
+                .background(Brush.verticalGradient(0f to background.copy(alpha = 0f), 0.55f to background)),
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { barInset = with(density) { it.height.toDp() } }
+                .navigationBarsPadding()
+                .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
         ) {
-            content()
+            val shape = MaterialTheme.shapes.extraLarge
+            Surface(
+                color = brand.card,
+                shape = shape,
+                modifier = Modifier.shadow(
+                    elevation = if (brand.isDark) 0.dp else 18.dp,
+                    shape = shape,
+                    ambientColor = brand.cardShadow.copy(alpha = 0.14f),
+                    spotColor = brand.cardShadow.copy(alpha = 0.22f),
+                ),
+            ) {
+                NavigationBar(
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
+                    windowInsets = WindowInsets(0, 0, 0, 0),
+                ) {
+                    for (item in Tab.entries) {
+                        NavigationBarItem(
+                            selected = item == tab,
+                            onClick = { onTabChange(item) },
+                            icon = { Icon(item.icon, contentDescription = null) },
+                            label = { Text(stringResource(item.labelRes)) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    }
+                }
+            }
         }
     }
 }

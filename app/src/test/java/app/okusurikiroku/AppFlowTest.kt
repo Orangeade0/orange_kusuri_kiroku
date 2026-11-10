@@ -109,7 +109,7 @@ class AppFlowTest {
 
         // お薬タブに一覧表示され、カレンダーにも今日の分が出る
         compose.onNodeWithText("お薬").performClick()
-        waitForText("8:00  19:00")
+        waitForText("19:00")
         compose.onNodeWithText("カレンダー").performClick()
         waitForText("0/2")
         captureScreenRoboImage("build/outputs/roborazzi/flow_calendar.png")

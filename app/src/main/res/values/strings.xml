@@ -16,6 +16,9 @@
     <string name="back_to_today">今日に戻る</string>
     <string name="progress_count">%1$d / %2$d 回 服用済み</string>
     <string name="progress_all_done">すべて飲みました</string>
+    <string name="hero_remaining">あと %1$d 回</string>
+    <string name="hero_all_done_sub">今日もおつかれさまでした</string>
+    <string name="hero_past_done_sub">この日の分は飲み終えています</string>
     <string name="mark_taken">飲んだ</string>
     <string name="taken">服用済み</string>
     <string name="taken_at">%1$s に記録</string>

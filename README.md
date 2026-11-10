@@ -6,10 +6,10 @@
 
 <p>
   <img src="docs/screenshots/today.png" alt="きろく画面" width="19%">
+  <img src="docs/screenshots/confetti.png" alt="すべて飲んだときの紙吹雪" width="19%">
   <img src="docs/screenshots/history.png" alt="カレンダー画面" width="19%">
   <img src="docs/screenshots/medication_edit.png" alt="お薬の編集画面" width="19%">
   <img src="docs/screenshots/settings.png" alt="設定画面" width="19%">
-  <img src="docs/screenshots/zh_today.png" alt="中国語のきろく画面" width="19%">
 </p>
 
 ## できること
@@ -24,6 +24,8 @@
 - **カレンダー** — 日ごとの「飲んだ回数/予定回数」と、月の服用率を表示
 - **リマインダー** — 飲む時間に通知。通知の「飲んだ」ボタンからそのまま記録可能（お薬ごとにオン/オフ）
 - **設定** — 表示言語（日本語 / 简体中文 / 端末の設定に合わせる）、食事の時間、食前・食後の分数
+- **見た目と動き** — 進み具合の円グラフ、記録したときのチェックの動き、その日の分をすべて飲んだときの紙吹雪、
+  画面の切り替えのアニメーション。端末でアニメーションを無効にしている場合、紙吹雪は出しません
 
 データは端末内（Room / SQLite）にのみ保存し、外部には送信しません。
 
