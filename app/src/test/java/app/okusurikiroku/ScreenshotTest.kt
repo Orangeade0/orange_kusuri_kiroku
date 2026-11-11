@@ -91,7 +91,7 @@ class ScreenshotTest {
     @Composable
     private fun Today(entries: List<DoseEntry>, hasMedications: Boolean = true, day: Long = today) {
         MainTabs(Tab.TODAY, {}) {
-            TodayScreen(day, today, entries, hasMedications, {}, { _, _ -> }, {})
+            TodayScreen(day, today, entries, hasMedications, {}, { _, _ -> }, {}, nowMinute = 9 * 60 + 30)
         }
     }
 

@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -84,6 +85,8 @@ fun TodayScreen(
     onDayChange: (Long) -> Unit,
     onSetTaken: (DoseEntry, Boolean) -> Unit,
     onAddMedication: () -> Unit,
+    /** 現在時刻（0時からの分）。今日を表示しているときの「あと◯分」に使う。わからなければ null。 */
+    nowMinute: Int? = null,
 ) {
     var undoTarget by remember { mutableStateOf<DoseEntry?>(null) }
     var enlarged by remember { mutableStateOf<Medication?>(null) }
@@ -133,24 +136,73 @@ fun TodayScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    entries.groupBy { it.minuteOfDay }.forEach { (minute, group) ->
-                        item(key = "time-$minute") {
-                            TimeHeader(minute = minute, group = group, modifier = Modifier.animateItem())
-                        }
-                        items(group, key = { "${it.medication.id}-${it.minuteOfDay}" }) { entry ->
-                            DoseCard(
-                                entry = entry,
+                    // これから飲む分を時間順に上へ、飲んだ分はその下へ分ける。
+                    // 記録するとカードは同じキーのまま下の区分へ移るので、動いて見える。
+                    val (pending, taken) = entries.partition { !it.taken }
+                    val now = nowMinute.takeIf { day == today }
+                    val doseCard: @Composable (DoseEntry, Modifier) -> Unit = { entry, modifier ->
+                        DoseCard(
+                            entry = entry,
+                            modifier = modifier,
+                            onClick = {
+                                if (entry.taken) {
+                                    undoTarget = entry
+                                } else {
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                    onSetTaken(entry, true)
+                                }
+                            },
+                            onImageClick = { enlarged = entry.medication },
+                        )
+                    }
+
+                    if (pending.isNotEmpty()) {
+                        item(key = "pending-title") {
+                            SectionHeader(
+                                title = stringResource(
+                                    if (day == today) R.string.section_upcoming else R.string.section_unrecorded,
+                                ),
+                                count = pending.size,
                                 modifier = Modifier.animateItem(),
-                                onClick = {
-                                    if (entry.taken) {
-                                        undoTarget = entry
-                                    } else {
-                                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                        onSetTaken(entry, true)
-                                    }
-                                },
-                                onImageClick = { enlarged = entry.medication },
                             )
+                        }
+                        // 「あと◯分」は、まだ時間が来ていない中でいちばん早い回にだけ出す
+                        val nextMinute = now?.let { current -> pending.map { it.minuteOfDay }.filter { it >= current }.minOrNull() }
+                        pending.groupBy { it.minuteOfDay }.forEach { (minute, group) ->
+                            item(key = "pending-time-$minute") {
+                                TimeHeader(
+                                    minute = minute,
+                                    done = false,
+                                    status = when {
+                                        now == null -> null
+                                        minute < now -> DueStatus.Overdue
+                                        minute == nextMinute -> DueStatus.In(minute - now)
+                                        else -> null
+                                    },
+                                    modifier = Modifier.animateItem(),
+                                )
+                            }
+                            items(group, key = { "${it.medication.id}-${it.minuteOfDay}" }) { entry ->
+                                doseCard(entry, Modifier.animateItem())
+                            }
+                        }
+                    }
+
+                    if (taken.isNotEmpty()) {
+                        item(key = "taken-title") {
+                            SectionHeader(
+                                title = stringResource(R.string.section_taken_list),
+                                count = taken.size,
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                        taken.groupBy { it.minuteOfDay }.forEach { (minute, group) ->
+                            item(key = "taken-time-$minute") {
+                                TimeHeader(minute = minute, done = true, status = null, modifier = Modifier.animateItem())
+                            }
+                            items(group, key = { "${it.medication.id}-${it.minuteOfDay}" }) { entry ->
+                                doseCard(entry, Modifier.animateItem())
+                            }
                         }
                     }
                 }
@@ -320,29 +372,89 @@ private fun HeroCard(day: Long, today: Long, summary: DaySummary?, onDayChange: 
     }
 }
 
-/** 時間ごとの見出し。その時間の分をすべて飲むと、丸に色がつく。 */
+/** 時間の見出しの横に出す、予定までの残り時間。 */
+private sealed interface DueStatus {
+    data object Overdue : DueStatus
+
+    data class In(val minutes: Int) : DueStatus
+}
+
+/** 「これから飲むお薬」「飲んだお薬」の区分の見出し。 */
 @Composable
-private fun TimeHeader(minute: Int, group: List<DoseEntry>, modifier: Modifier = Modifier) {
-    val taken = group.count { it.taken }
-    val dotColor by animateColorAsState(
-        if (taken == group.size) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        label = "timeDot",
-    )
+private fun SectionHeader(title: String, count: Int, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 10.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 12.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            shape = RoundedCornerShape(50),
+        ) {
+            Text(
+                stringResource(R.string.dose_count, count),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+            )
+        }
+    }
+}
+
+/** 時間ごとの見出し。飲んだ分は丸に色がつき、これから飲む分には残り時間を添える。 */
+@Composable
+private fun TimeHeader(minute: Int, done: Boolean, status: DueStatus?, modifier: Modifier = Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 4.dp, top = 6.dp),
     ) {
         Box(
             Modifier
                 .size(10.dp)
-                .background(dotColor, CircleShape),
+                .background(
+                    if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    CircleShape,
+                ),
         )
         Spacer(Modifier.width(10.dp))
         Text(formatMinutes(minute), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.width(12.dp))
         HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+        if (status != null) {
+            Spacer(Modifier.width(12.dp))
+            val overdue = status is DueStatus.Overdue
+            Surface(
+                color = if (overdue) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer,
+                contentColor = if (overdue) {
+                    MaterialTheme.colorScheme.onTertiaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
+                shape = RoundedCornerShape(50),
+            ) {
+                Text(
+                    when (status) {
+                        DueStatus.Overdue -> stringResource(R.string.overdue)
+                        is DueStatus.In -> when {
+                            status.minutes == 0 -> stringResource(R.string.due_now)
+                            status.minutes < 60 -> stringResource(R.string.due_in_minutes, status.minutes)
+                            status.minutes % 60 == 0 -> stringResource(R.string.due_in_hours, status.minutes / 60)
+                            else -> stringResource(
+                                R.string.due_in_hours_minutes,
+                                status.minutes / 60,
+                                status.minutes % 60,
+                            )
+                        }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                )
+            }
+        }
     }
 }
 

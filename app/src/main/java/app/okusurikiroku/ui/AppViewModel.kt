@@ -68,12 +68,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     /** 画面に戻ったとき。日付が変わっていたら「今日」を進める。 */
     fun onResume() {
+        refreshToday()
+        viewModelScope.launch { Reminders.scheduleNext(getApplication()) }
+    }
+
+    /** 日付が変わっていたら「今日」を進める。画面を開いたまま日をまたいだときにも呼ぶ。 */
+    fun refreshToday() {
         val now = LocalDate.now().toEpochDay()
         if (now != today.value) {
             if (selectedDay.value == today.value) selectedDay.value = now
             today.value = now
         }
-        viewModelScope.launch { Reminders.scheduleNext(getApplication()) }
     }
 
     fun selectDay(day: Long) {

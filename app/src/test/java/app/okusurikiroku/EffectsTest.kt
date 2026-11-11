@@ -36,6 +36,74 @@ class EffectsTest {
         Medication(id = 2, name = "整腸剤", dosage = "1包", times = listOf(480), startDay = 0),
     )
 
+    private fun top(text: String): Float =
+        compose.onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top
+
+    @Test
+    fun upcomingDosesAreListedFirstInTimeOrder() {
+        val noon = Medication(id = 3, name = "ビタミンC", times = listOf(720), startDay = 0)
+        val evening = Medication(id = 4, name = "鉄剤", times = listOf(1140), startDay = 0)
+        var entries by mutableStateOf(
+            listOf(
+                DoseEntry(medications[0], 480, 1_000L), // 8:00 飲んだ
+                DoseEntry(medications[1], 480, null), // 8:00 まだ（時間を過ぎている）
+                DoseEntry(noon, 720, null), // 12:00 まだ
+                DoseEntry(evening, 1140, null), // 19:00 まだ
+            ),
+        )
+        compose.setContent {
+            OkusuriTheme(darkTheme = false) {
+                TodayScreen(
+                    day = today,
+                    today = today,
+                    entries = entries,
+                    hasMedications = true,
+                    onDayChange = {},
+                    onSetTaken = { entry, taken ->
+                        entries = entries.map { if (it == entry) it.copy(takenAt = if (taken) 2_000L else null) else it }
+                    },
+                    onAddMedication = {},
+                    nowMinute = 9 * 60 + 30,
+                )
+            }
+        }
+
+        // これから飲む分が時間順に上、飲んだ分が下
+        val order = listOf("これから飲むお薬", "整腸剤", "ビタミンC", "鉄剤", "飲んだお薬", "アムロジピン").map(::top)
+        assertEquals(order.sorted(), order)
+        // 過ぎた回と、次の回までの時間
+        compose.onNodeWithText("予定の時間を過ぎています").assertExists()
+        compose.onNodeWithText("あと 2時間30分").assertExists()
+
+        // 記録すると、そのお薬は「飲んだお薬」へ移る
+        compose.onAllNodesWithTextCompat("飲んだ").first().performClick()
+        compose.waitForIdle()
+        val after = listOf("これから飲むお薬", "ビタミンC", "鉄剤", "飲んだお薬", "アムロジピン", "整腸剤").map(::top)
+        assertEquals(after.sorted(), after)
+        compose.onNodeWithText("予定の時間を過ぎています").assertDoesNotExist()
+    }
+
+    @Test
+    fun pastDaysListUnrecordedDosesFirstWithoutCountdown() {
+        compose.setContent {
+            OkusuriTheme(darkTheme = false) {
+                TodayScreen(
+                    day = today - 1,
+                    today = today,
+                    entries = listOf(DoseEntry(medications[0], 480, 1_000L), DoseEntry(medications[1], 480, null)),
+                    hasMedications = true,
+                    onDayChange = {},
+                    onSetTaken = { _, _ -> },
+                    onAddMedication = {},
+                    nowMinute = 9 * 60 + 30,
+                )
+            }
+        }
+        compose.onNodeWithText("記録していないお薬").assertExists()
+        compose.onNodeWithText("これから飲むお薬").assertDoesNotExist()
+        compose.onNodeWithText("予定の時間を過ぎています").assertDoesNotExist()
+    }
+
     @Test
     fun takingTheLastDoseCelebratesWithConfetti() {
         var entries by mutableStateOf(

@@ -52,6 +52,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -65,6 +67,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.okusurikiroku.R
 import app.okusurikiroku.reminder.Reminders
+import java.time.LocalTime
+import kotlinx.coroutines.delay
 
 enum class Tab(val labelRes: Int, val icon: ImageVector) {
     TODAY(R.string.tab_today, Icons.Filled.CheckCircle),
@@ -98,10 +102,22 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
     val activeMedications = allMedications?.filter { !it.isArchived }
 
     val hasReminders = activeMedications?.any { it.reminderEnabled && (it.periodEnd ?: Long.MAX_VALUE) >= today } == true
+    // 画面に戻るたびに数え直す。現在時刻を読み直すきっかけにもする
+    var resumeCount by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
         notice = reminderNotice(context)
+        resumeCount++
         onPauseOrDispose { }
+    }
+    // 現在時刻（0時からの分）。「あと◯分」の表示のため、分が変わるたびに更新する
+    val nowMinute by produceState(initialValue = currentMinuteOfDay(), resumeCount) {
+        value = currentMinuteOfDay()
+        while (true) {
+            delay((60 - LocalTime.now().second) * 1000L)
+            value = currentMinuteOfDay()
+            viewModel.refreshToday()
+        }
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         notice = reminderNotice(context)
@@ -155,6 +171,7 @@ fun OkusuriAppUi(viewModel: AppViewModel = viewModel(factory = AppViewModel.Fact
                         day = selectedDay,
                         today = today,
                         entries = dayEntries,
+                        nowMinute = nowMinute,
                         hasMedications = activeMedications?.isNotEmpty() == true,
                         onDayChange = viewModel::selectDay,
                         onSetTaken = viewModel::setTaken,
@@ -279,6 +296,8 @@ fun MainTabs(tab: Tab, onTabChange: (Tab) -> Unit, content: @Composable (Tab) ->
         }
     }
 }
+
+private fun currentMinuteOfDay(): Int = LocalTime.now().toSecondOfDay() / 60
 
 private fun needsNotificationPermission(context: Context): Boolean =
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

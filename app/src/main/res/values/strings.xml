@@ -19,6 +19,15 @@
     <string name="hero_remaining">あと %1$d 回</string>
     <string name="hero_all_done_sub">今日もおつかれさまでした</string>
     <string name="hero_past_done_sub">この日の分は飲み終えています</string>
+    <string name="section_upcoming">これから飲むお薬</string>
+    <string name="section_unrecorded">記録していないお薬</string>
+    <string name="section_taken_list">飲んだお薬</string>
+    <string name="dose_count">%1$d 回</string>
+    <string name="due_in_hours_minutes">あと %1$d時間%2$d分</string>
+    <string name="due_in_hours">あと %1$d時間</string>
+    <string name="due_in_minutes">あと %1$d分</string>
+    <string name="due_now">いま飲む時間です</string>
+    <string name="overdue">予定の時間を過ぎています</string>
     <string name="mark_taken">飲んだ</string>
     <string name="taken">服用済み</string>
     <string name="taken_at">%1$s に記録</string>

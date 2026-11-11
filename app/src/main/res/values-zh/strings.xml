@@ -19,6 +19,15 @@
     <string name="hero_remaining">还剩 %1$d 次</string>
     <string name="hero_all_done_sub">今天也辛苦了</string>
     <string name="hero_past_done_sub">这一天的药已全部服用</string>
+    <string name="section_upcoming">接下来要服用的药</string>
+    <string name="section_unrecorded">未记录的药</string>
+    <string name="section_taken_list">已服用的药</string>
+    <string name="dose_count">%1$d 次</string>
+    <string name="due_in_hours_minutes">还有 %1$d小时%2$d分钟</string>
+    <string name="due_in_hours">还有 %1$d小时</string>
+    <string name="due_in_minutes">还有 %1$d分钟</string>
+    <string name="due_now">现在该服药了</string>
+    <string name="overdue">已超过预定时间</string>
     <string name="mark_taken">已服药</string>
     <string name="taken">已服用</string>
     <string name="taken_at">%1$s 已记录</string>
